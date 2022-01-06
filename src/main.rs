@@ -20,7 +20,7 @@ enum Event {
 /// It sends the custom RequestRedraw event to the winit event loop.
 struct ExampleRepaintSignal(std::sync::Mutex<winit::event_loop::EventLoopProxy<Event>>);
 
-impl epi::RepaintSignal for ExampleRepaintSignal {
+impl epi::backend::RepaintSignal for ExampleRepaintSignal {
     fn request_repaint(&self) {
         self.0.lock().unwrap().send_event(Event::RequestRedraw).ok();
     }
@@ -93,7 +93,6 @@ fn main() {
     let mut demo_app = egui_demo_lib::WrapApp::default();
 
     let start_time = Instant::now();
-    let mut previous_frame_time = None;
     event_loop.run(move |event, _, control_flow| {
         // Pass the winit events to the platform integration.
         platform.handle_event(&event);
@@ -120,9 +119,8 @@ fn main() {
                     .create_view(&wgpu::TextureViewDescriptor::default());
 
                 // Begin to draw the UI frame.
-                let egui_start = Instant::now();
                 platform.begin_frame();
-                let mut app_output = epi::backend::AppOutput::default();
+                let _app_output = epi::backend::AppOutput::default();
 
                 let mut frame =  epi::Frame::new(epi::backend::FrameData {
                     info: epi::IntegrationInfo {
@@ -136,7 +134,6 @@ fn main() {
                     repaint_signal: repaint_signal.clone(),
                 });
 
-
                 // Draw the demo application.
                 demo_app.update(&platform.context(), &mut frame);
 
@@ -144,8 +141,6 @@ fn main() {
                 let (_output, paint_commands) = platform.end_frame(Some(&window));
                 let paint_jobs = platform.context().tessellate(paint_commands);
 
-                let frame_time = (Instant::now() - egui_start).as_secs_f64() as f32;
-                previous_frame_time = Some(frame_time);
 
                 let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
                     label: Some("encoder"),
@@ -157,7 +152,7 @@ fn main() {
                     physical_height: surface_config.height,
                     scale_factor: window.scale_factor() as f32,
                 };
-                egui_rpass.update_texture(&device, &queue, &platform.context().texture());
+                egui_rpass.update_texture(&device, &queue, &platform.context().font_image());
                 egui_rpass.update_user_textures(&device, &queue);
                 egui_rpass.update_buffers(&device, &queue, &paint_jobs, &screen_descriptor);
 
