@@ -124,19 +124,18 @@ fn main() {
                 platform.begin_frame();
                 let mut app_output = epi::backend::AppOutput::default();
 
-                let mut frame = epi::backend::FrameBuilder {
+                let mut frame =  epi::Frame::new(epi::backend::FrameData {
                     info: epi::IntegrationInfo {
                         name: "egui_example",
                         web_info: None,
-                        cpu_usage: previous_frame_time,
+                        cpu_usage: None,
                         native_pixels_per_point: Some(window.scale_factor() as _),
                         prefer_dark_mode: None,
                     },
-                    tex_allocator: &mut egui_rpass,
-                    output: &mut app_output,
+                    output: Default::default(),
                     repaint_signal: repaint_signal.clone(),
-                }
-                .build();
+                });
+
 
                 // Draw the demo application.
                 demo_app.update(&platform.context(), &mut frame);
